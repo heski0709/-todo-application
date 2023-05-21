@@ -28,7 +28,7 @@ public class WebSecurityConfig {
 			.sessionManagement(session -> 
 					session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // session 기반이 아님을 선언
 			.authorizeHttpRequests(authz -> // /와 /auth/** 경로는 인증 안해도 됨.
-					authz.antMatchers("/", "/auth/**")
+					authz.antMatchers("/", "/auth/**", "/h2/**")
 					.permitAll()
 					.anyRequest() // /와 /auth/**이외의 모든 경로는 인증 해야됨.
 					.authenticated());
