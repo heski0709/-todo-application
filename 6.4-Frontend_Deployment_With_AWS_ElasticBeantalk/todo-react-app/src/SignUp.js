@@ -7,13 +7,16 @@ import {
     Container,
     Typography,
 } from "@material-ui/core";
-import { signup } from "./service/ApiService";
+import { signup, existsByEmail } from "./service/ApiService";
 
 class SignUp extends React.Component {
     constructor(props) {
         super(props);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.state = {
+            email: '',
+            isEmailValid: true,
+            emailErrorMessage: '',
             username: '',
             isUsernameValid: true,
             usernameErrorMessage: ''
@@ -27,7 +30,7 @@ class SignUp extends React.Component {
         const username = data.get("username");
         const email = data.get("email");
         const password = data.get("password");
-        signup({ email: email, username: username, password: password }).then(
+        signup({ username, email, password }).then(
             (response) => {
                 if (response) {
                     // 계정 생성 성공 시 login페이지로 리디렉트
@@ -37,41 +40,27 @@ class SignUp extends React.Component {
         );
     }
 
+    handleChangeEmail = (event) => {
+        this.setState({
+            email: event.target.value,
+        });
+    }
+
     handleChangeUsername = (event) => {
         this.setState({
             username: event.target.value,
         });
     }
 
-    // username의 유효성 검사
     validateUsername = () => {
-        const regexpSpecialSymbol = /[~!@#$%^&*(){}[\]<>.;'"\\-_=+/]+/;
-        const regexpUsername = /^(?=.*[A-Za-z])[A-Za-z0-9]{8,}$/;
+        const regexpUsername = /(?=.*[ㄱ-ㅎ|ㅏ-ㅣ])+/;
+        const { username } = this.state;
 
-        if (this.state.username === '') {
+        if (regexpUsername.test(username)) {
             this.setState({
                 isUsernameValid: false,
-                usernameErrorMessage: '이름을 입력해주세요.',
-            });
-
-            return;
-        } 
-
-        if (regexpSpecialSymbol.test(this.state.username)) {
-            this.setState({
-                isUsernameValid: false,
-                usernameErrorMessage: '특수문자를 포함할 수 없습니다.'
+                usernameErrorMessage: '유효하지 않은 이름입니다.'
             })
-
-            return;
-        }
-        
-        if (!regexpUsername.test(this.state.username)) {
-            this.setState({
-                isUsernameValid: false,
-                usernameErrorMessage: '하나 이상의 알파벳이 포함되어야하며 숫자, 알파벳 조합으로 8자리 이상이여야 합니다.'
-            })
-
             return;
         }
 
@@ -79,6 +68,47 @@ class SignUp extends React.Component {
             isUsernameValid: true,
             usernameErrorMessage: ''
         })
+    }
+
+    // email의 유효성 검사
+    validateEmail = () => {
+        // RFC 5322 표준 이메일 정규표현식
+        const regexpEmail = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+        const { email } = this.state;
+
+        if (email === '') {
+            this.setState({
+                isEmailValid: false,
+                emailErrorMessage: '이메일을 입력해주세요.',
+            });
+
+            return;
+        }
+
+        if (!regexpEmail.test(email)) {
+            this.setState({
+                isEmailValid: false,
+                emailErrorMessage: '유효하지 않은 이메일 형식입니다.'
+            })
+
+            return;
+        }
+
+        existsByEmail(email).then(
+            response => {
+                if (response.error == null) {
+                    this.setState({
+                        isEmailValid: true,
+                        emailErrorMessage: ''
+                    })
+                } else {
+                    this.setState({
+                        isEmailValid: false,
+                        emailErrorMessage: response.error
+                    })
+                }
+            }
+        )
     }
 
     render() {
@@ -99,7 +129,7 @@ class SignUp extends React.Component {
                                 required
                                 fullWidth
                                 id="username"
-                                label="유저 이름"
+                                label="이름"
                                 autoFocus
                                 onChange={this.handleChangeUsername}
                                 error={!this.state.isUsernameValid}
@@ -116,6 +146,10 @@ class SignUp extends React.Component {
                                 label="이메일 주소"
                                 name="email"
                                 autoComplete="email"
+                                onChange={this.handleChangeEmail}
+                                error={!this.state.isEmailValid}
+                                onBlur={this.validateEmail}
+                                helperText={this.state.emailErrorMessage}
                             />
                         </Grid>
                         <Grid item xs={12}>
