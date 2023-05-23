@@ -1,19 +1,23 @@
 package com.example.demo.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.example.demo.dto.ResponseDTO;
 import com.example.demo.dto.UserDTO;
 import com.example.demo.model.UserEntity;
 import com.example.demo.security.TokenProvider;
 import com.example.demo.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
@@ -80,6 +84,28 @@ public class UserController {
 			return ResponseEntity
 							.badRequest()
 							.body(responseDTO);
+		}
+	}
+
+	
+	/** 
+	 * Email 중복 체크를 위한 API
+	 * @param email 클라이언트 측에서 보내는 이메일 문자열
+	 * @return 처리 결과에 대한 리턴. {@linkplain org.springframework.http.HttpStatus#OK OK} 성공 시, {@linkplain org.springframework.http.HttpStatus#BAD_REQUEST BAD_REQUEST} 실패 시
+	 */
+	@PostMapping("/existsByEmail")
+	public ResponseEntity<?> existsByEmail(@RequestBody Object email) {
+		try {
+			ResponseDTO responseDTO = null;
+			if (userService.existsByEmail((String) email)) {
+				responseDTO = ResponseDTO.builder().error("이미 사용 중인 이메일입니다.").build();
+			} else {
+				responseDTO = ResponseDTO.builder().message("사용 가능한 이메일입니다.").build();
+			}
+			return ResponseEntity.ok(responseDTO);
+		} catch (Exception e) {
+			ResponseDTO responseDTO = ResponseDTO.builder().error(e.getMessage()).build();
+			return ResponseEntity.badRequest().body(responseDTO);
 		}
 	}
 }

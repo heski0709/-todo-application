@@ -39,4 +39,17 @@ public class UserService {
 		}
 		return null;
 	}
+
+	public boolean existsByEmail(String email) {
+		if (email == null || email == "") {
+			throw new RuntimeException("Invalid arguments");
+		}
+
+		if (userRepository.existsByEmail(email)) {
+			log.warn("email already exists {}", email);
+			return true;
+		}
+
+		return false;
+	}
 }
